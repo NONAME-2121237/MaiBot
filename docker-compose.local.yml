@@ -1,0 +1,9 @@
+services:
+  core:
+    image: maibot:local
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      MAIBOT_WEBUI_USE_LOCAL_DASHBOARD: "1"
+      MAIBOT_WEBUI_STATIC_PATH: /MaiMBot/dashboard/dist
