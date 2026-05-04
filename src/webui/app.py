@@ -18,6 +18,7 @@ logger = get_logger("webui.app")
 
 _DASHBOARD_PACKAGE_NAME = "maibot-dashboard"
 _LOCAL_DASHBOARD_ENV = "MAIBOT_WEBUI_USE_LOCAL_DASHBOARD"
+_STATIC_PATH_ENV = "MAIBOT_WEBUI_STATIC_PATH"
 _MANUAL_INSTALL_COMMAND = f"pip install {_DASHBOARD_PACKAGE_NAME}"
 
 
@@ -36,6 +37,25 @@ def _resolve_safe_static_file_path(static_path: Path, full_path: str) -> Path | 
 
 def _get_project_root() -> Path:
     return Path(__file__).resolve().parents[2]
+
+
+def _walk_up(start: Path):
+    current = start.resolve()
+    while True:
+        yield current
+        if current.parent == current:
+            break
+        current = current.parent
+
+
+def _find_local_dashboard_dist() -> Path | None:
+    candidates = [_get_project_root(), Path.cwd()]
+    for base in candidates:
+        for root in _walk_up(base):
+            dist = root / "dashboard" / "dist"
+            if dist.is_dir() and (dist / "index.html").exists():
+                return dist
+    return None
 
 
 def _is_local_dashboard_enabled() -> bool:
@@ -221,10 +241,16 @@ def _setup_static_files(app: FastAPI):
 
 
 def _resolve_static_path() -> Path | None:
+    static_path_from_env = getenv(_STATIC_PATH_ENV, "").strip()
+    if static_path_from_env:
+        resolved = Path(static_path_from_env).expanduser()
+        if resolved.is_dir() and (resolved / "index.html").exists():
+            return resolved
+
     if _is_local_dashboard_enabled():
-        static_path = _get_project_root() / "dashboard" / "dist"
-        if static_path.is_dir() and (static_path / "index.html").exists():
-            return static_path
+        local_dist = _find_local_dashboard_dist()
+        if local_dist is not None:
+            return local_dist
 
     try:
         module = import_module("maibot_dashboard")

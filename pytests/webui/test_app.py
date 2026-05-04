@@ -112,6 +112,34 @@ def test_resolve_static_path_uses_package_even_when_dashboard_dist_exists(monkey
     assert resolved_path == package_dist
 
 
+def test_resolve_static_path_uses_env_static_path(monkeypatch, tmp_path) -> None:
+    dist = tmp_path / "somewhere" / "dist"
+    dist.mkdir(parents=True)
+    (dist / "index.html").write_text("<html></html>", encoding="utf-8")
+
+    monkeypatch.setenv("MAIBOT_WEBUI_STATIC_PATH", str(dist))
+
+    with patch.object(webui_app, "import_module", side_effect=ImportError):
+        resolved_path = webui_app._resolve_static_path()
+
+    assert resolved_path == dist
+
+
+def test_resolve_static_path_finds_dashboard_dist_from_cwd_when_local_mode_enabled(monkeypatch, tmp_path) -> None:
+    dist = tmp_path / "dashboard" / "dist"
+    dist.mkdir(parents=True)
+    (dist / "index.html").write_text("<html></html>", encoding="utf-8")
+
+    monkeypatch.setenv("MAIBOT_WEBUI_USE_LOCAL_DASHBOARD", "1")
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setattr(webui_app, "_get_project_root", lambda: tmp_path / "site-packages")
+
+    with patch.object(webui_app, "import_module", side_effect=ImportError):
+        resolved_path = webui_app._resolve_static_path()
+
+    assert resolved_path == dist
+
+
 def test_resolve_safe_static_file_path_allows_regular_static_file(tmp_path) -> None:
     static_path = tmp_path / "dist"
     asset_path = static_path / "assets" / "app.js"
