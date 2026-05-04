@@ -22,7 +22,7 @@ services:
       - ./docker-config/mmc:/MaiMBot/config # 持久化bot配置文件
       - ./data/MaiMBot/maibot_statistics.html:/MaiMBot/maibot_statistics.html #统计数据输出
       - ./data/MaiMBot:/MaiMBot/data # 共享目录
-      - ./data/MaiMBot/emoji:/data/emoji # 持久化表情包
+      - /data/emoji:/data/emoji # 持久化表情包
       - ./data/MaiMBot/plugins:/MaiMBot/plugins # 插件目录
       - ./data/MaiMBot/logs:/MaiMBot/logs # 日志目录
       # - site-packages:/usr/local/lib/python3.13/site-packages # 持久化Python包，需要时启用
@@ -79,16 +79,18 @@ services:
 
   # chat2db占用相对较高但是功能强大
   # 内存占用约600m，内存充足推荐选此
-  # chat2db:
-  #   image: chat2db/chat2db:latest
-  #   container_name: maim-bot-chat2db
-  #   restart: always
-  #   ports:
-  #     - "10824:10824"
-  #   volumes:
-  #     - ./data/MaiMBot:/data/MaiMBot
-  #   networks:
-  #     - maim_bot
+  chat2db:
+    image: chat2db/chat2db:latest
+    container_name: maim-bot-chat2db
+    restart: always
+    environment:
+      - TZ=Asia/Shanghai
+    ports:
+      - "10824:10824"
+    volumes:
+      - ./data/MaiMBot:/data/MaiMBot
+    networks:
+      - maim_bot
   
 # volumes:         #  若需要持久化Python包时启用
 #   site-packages:
