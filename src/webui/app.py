@@ -221,8 +221,12 @@ def _setup_static_files(app: FastAPI):
 
 
 def _resolve_static_path() -> Path | None:
-    if _is_local_dashboard_enabled():
-        static_path = _get_project_root() / "dashboard" / "dist"
+    static_path = _get_project_root() / "dashboard" / "dist"
+    env_val = getenv(_LOCAL_DASHBOARD_ENV)
+    if env_val is None or not env_val.strip():
+        if static_path.is_dir() and (static_path / "index.html").exists():
+            return static_path
+    elif _is_local_dashboard_enabled():
         if static_path.is_dir() and (static_path / "index.html").exists():
             return static_path
 
